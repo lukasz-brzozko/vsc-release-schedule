@@ -157,7 +157,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
   toggleItemChecked(item: TreeItem) {
     item.toggleChecked();
-    this._onDidChangeTreeData.fire(item);
+    this._onDidChangeTreeData.fire();
   }
 }
 
