@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import moment from "moment";
 
+let userStartDate: moment.Moment | null = null; // Track the user-selected date
+
 export function activate(context: vscode.ExtensionContext) {
   const myTreeDataProvider = new MyTreeDataProvider();
   vscode.window.registerTreeDataProvider("myTreeView", myTreeDataProvider);
-
-  let startDate: moment.Moment | null = null;
 
   let disposable = vscode.commands.registerCommand(
     "extension.showTreeView",
@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     const index = myTreeDataProvider.items.indexOf(item);
     if (index > 0) {
       myTreeDataProvider.moveItem(index, index - 1);
-      updateDates(startDate);
+      updateDates(userStartDate); // Use the user-selected date if available
     }
   });
 
@@ -30,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
     const index = myTreeDataProvider.items.indexOf(item);
     if (index < myTreeDataProvider.items.length - 1) {
       myTreeDataProvider.moveItem(index, index + 1);
-      updateDates(startDate);
+      updateDates(userStartDate); // Use the user-selected date if available
     }
   });
 
@@ -38,62 +38,76 @@ export function activate(context: vscode.ExtensionContext) {
     "myTreeView.toggleChecked",
     (item: TreeItem) => {
       myTreeDataProvider.toggleItemChecked(item);
-      updateDates(startDate);
+      updateDates(userStartDate); // Use the user-selected date if available
     }
   );
 
-  vscode.commands.registerCommand("extension.generateJSON", () => {
+  vscode.commands.registerCommand("extension.generateReminderFile", () => {
     const data = myTreeDataProvider.items
       .filter((item) => item.checked)
       .map((item) => ({
         label: item.label,
-        checked: item.checked,
         nextMonday: item.nextMonday
           ? item.nextMonday.format("DD-MM-YYYY")
           : null,
       }));
 
-    const jsonContent = JSON.stringify(data, null, 2);
-    vscode.workspace.fs.writeFile(
-      vscode.Uri.file("selectedItems.json"),
-      Buffer.from(jsonContent, "utf-8")
-    );
+    const fileContent = data
+      .map(
+        (item, index) =>
+          `/remind #b2b-front "W tym tygodniu podgrywa @${item.label} every ${data.length} weeks starting ${item.nextMonday} at 9:00AM"`
+      )
+      .join("\n");
 
-    vscode.window.showInformationMessage("JSON file generated successfully.");
+    const filePath = vscode.Uri.parse("untitled:Reminders.txt");
+    vscode.workspace.openTextDocument(filePath).then((document) => {
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(filePath, new vscode.Position(0, 0), fileContent);
+      return vscode.workspace.applyEdit(edit).then((success) => {
+        if (success) {
+          vscode.window.showTextDocument(document);
+        } else {
+          vscode.window.showInformationMessage(
+            "Error generating reminders file"
+          );
+        }
+      });
+    });
   });
 
   vscode.commands.registerCommand("extension.pickDate", async () => {
-    const dateStr = await vscode.window.showInputBox({
-      prompt: "Enter a date (DD.MM.YYYY) to set as the start date",
-      placeHolder: "DD.MM.YYYY",
+    const input = await vscode.window.showInputBox({
+      placeHolder: "Enter a date (DD.MM.YYYY)",
       validateInput: (text) => {
-        if (!text.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
-          return "Invalid date format. Please use DD.MM.YYYY format.";
-        }
-        return null;
+        return moment(text, "DD.MM.YYYY", true).isValid()
+          ? null
+          : "Invalid date format. Use DD.MM.YYYY.";
       },
     });
 
-    if (dateStr) {
-      const newStartDate = moment(dateStr, "DD.MM.YYYY");
-      if (newStartDate.isValid()) {
-        startDate = newStartDate; // Ustawienie nowej daty startowej
-        updateDates(startDate); // Aktualizacja dat po ustawieniu nowej daty
+    if (input) {
+      userStartDate = moment(input, "DD.MM.YYYY");
+      if (userStartDate.isValid()) {
+        updateDates(userStartDate);
       } else {
-        vscode.window.showErrorMessage("Invalid date format provided.");
+        vscode.window.showErrorMessage(
+          "Invalid date. Please enter a valid date in the format DD.MM.YYYY."
+        );
       }
     }
   });
 
   function updateDates(startDate?: moment.Moment | null) {
-    startDate = startDate || moment().startOf("isoWeek").add(1, "week");
-    let nextValidMonday = startDate.clone(); // Inicjalizacja kolejnego poniedziałku
+    if (!startDate) {
+      startDate = moment().startOf("isoWeek").add(1, "week"); // Default to next Monday
+    }
+    let nextValidMonday = startDate.clone(); // Initialize the next valid Monday
 
     myTreeDataProvider.items.forEach((item) => {
       if (item.checked) {
         item.nextMonday = nextValidMonday.clone();
         item.updateNextMonday();
-        nextValidMonday.add(1, "week"); // Przejście do następnego poniedziałku dla kolejnego elementu
+        nextValidMonday.add(1, "week"); // Move to the next Monday for the next item
       } else {
         item.nextMonday = null;
         item.updateNextMonday();
@@ -126,7 +140,7 @@ class TreeItem extends vscode.TreeItem {
 
   updateNextMonday() {
     if (this.checked && this.nextMonday === null) {
-      let startDate = moment().startOf("isoWeek").add(1, "week"); // Start od następnego poniedziałku
+      let startDate = moment().startOf("isoWeek").add(1, "week"); // Start from next Monday
       this.nextMonday = startDate.clone().add(this.index, "week");
     } else if (!this.checked) {
       this.nextMonday = null;
