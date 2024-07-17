@@ -62,7 +62,9 @@ export function activate(context: vscode.ExtensionContext) {
         (item) =>
           `/remind #b2b-front "W tym tygodniu podgrywa @${item.label
             ?.toString()
-            .match(/^([\w\s]\w+)+/g)}" every ${data.length} weeks starting ${
+            .match(
+              /^([\w\sąćęłńóśźżĄĆĘŁŃÓŚŹŻ][\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+)+/g
+            )}" every ${data.length} weeks starting ${
             item.nextMonday
           } at 9:00AM`
       )
