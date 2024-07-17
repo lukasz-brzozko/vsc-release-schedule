@@ -1,8 +1,9 @@
 {
   "name": "release-schedule-vsc",
-  "displayName": "release-schedule-vsc",
-  "description": "release-schedule-vsc",
-  "version": "0.0.1",
+  "displayName": "Release Schedule",
+  "description": "Organises release schedule order and generates Slack reminder messages in VSC Panel",
+  "author": "Łukasz Brzózko",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.91.0"
   },
