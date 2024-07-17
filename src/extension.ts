@@ -96,6 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand("extension.pickDate", async () => {
     const input = await vscode.window.showInputBox({
       placeHolder: "Enter a date (DD.MM.YYYY)",
+      value: moment().startOf("isoWeek").add(1, "week").format("DD.MM.YYYY"),
       validateInput: (text) => {
         return moment(text, "DD.MM.YYYY", true).isValid()
           ? null
