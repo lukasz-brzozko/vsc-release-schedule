@@ -31,7 +31,7 @@
       },
       {
         "command": "extension.generateReminderFile",
-        "title": "Generuj komendy"
+        "title": "Generate reminders"
       },
       {
         "command": "extension.pickDate",
@@ -49,19 +49,19 @@
     "menus": {
       "view/item/context": [
         {
-          "command": "myTreeView.moveUp",
+          "command": "myTreeView.toggleChecked",
           "when": "view == myTreeView",
           "group": "navigation"
+        },
+        {
+          "command": "myTreeView.moveUp",
+          "when": "view == myTreeView",
+          "group": "2_workspace"
         },
         {
           "command": "myTreeView.moveDown",
           "when": "view == myTreeView",
-          "group": "navigation"
-        },
-        {
-          "command": "myTreeView.toggleChecked",
-          "when": "view == myTreeView",
-          "group": "navigation"
+          "group": "2_workspace"
         }
       ],
       "view/title": [

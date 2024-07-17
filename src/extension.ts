@@ -48,21 +48,32 @@ export function activate(context: vscode.ExtensionContext) {
       .map((item) => ({
         label: item.label,
         nextMonday: item.nextMonday
-          ? item.nextMonday.format("DD-MM-YYYY")
+          ? item.nextMonday.format("DD.MM.YYYY")
           : null,
       }));
 
     const fileContent = data
       .map(
-        (item, index) =>
-          `/remind #b2b-front "W tym tygodniu podgrywa @${item.label} every ${data.length} weeks starting ${item.nextMonday} at 9:00AM"`
+        (item) =>
+          `/remind #b2b-front "W tym tygodniu podgrywa @${item.label
+            ?.toString()
+            .match(/^([\w\s]\w+)+/g)}" every ${data.length} weeks starting ${
+            item.nextMonday
+          } at 9:00AM`
       )
       .join("\n");
 
-    const filePath = vscode.Uri.parse("untitled:Reminders.txt");
+    const filePath = vscode.Uri.parse("untitled:reminders.txt");
     vscode.workspace.openTextDocument(filePath).then((document) => {
       const edit = new vscode.WorkspaceEdit();
-      edit.insert(filePath, new vscode.Position(0, 0), fileContent);
+      edit.replace(
+        filePath,
+        new vscode.Range(
+          document.lineAt(0).range.start,
+          document.lineAt(document.lineCount - 1).range.end
+        ),
+        fileContent
+      );
       return vscode.workspace.applyEdit(edit).then((success) => {
         if (success) {
           vscode.window.showTextDocument(document);
@@ -147,7 +158,7 @@ class TreeItem extends vscode.TreeItem {
     }
 
     this.tooltip = this.nextMonday
-      ? `Next Monday: ${this.nextMonday.format("DD-MM-YYYY")}`
+      ? `Next Monday: ${this.nextMonday.format("DD.MM.YYYY")}`
       : "Not checked";
     this.iconPath = this.checked
       ? new vscode.ThemeIcon("check")
@@ -155,7 +166,7 @@ class TreeItem extends vscode.TreeItem {
 
     if (this.checked && this.nextMonday) {
       this.label = `${this.originalLabel} (${this.nextMonday.format(
-        "DD-MM-YYYY"
+        "DD.MM.YYYY"
       )})`;
     } else {
       this.label = this.originalLabel;
