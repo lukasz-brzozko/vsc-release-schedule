@@ -60,20 +60,44 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage("JSON file generated successfully.");
   });
 
-  function updateDates() {
-    let startDate = moment().startOf("isoWeek").add(1, "week"); // Start from next Monday
-    let nextValidMonday = startDate.clone(); // Initialize the next valid Monday
+  vscode.commands.registerCommand("extension.pickDate", async () => {
+    const dateStr = await vscode.window.showInputBox({
+      prompt: "Enter a date (DD.MM.YYYY) to set as the start date",
+      placeHolder: "DD.MM.YYYY",
+      validateInput: (text) => {
+        if (!text.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+          return "Invalid date format. Please use DD.MM.YYYY format.";
+        }
+        return null;
+      },
+    });
+
+    if (dateStr) {
+      const newStartDate = moment(dateStr, "DD.MM.YYYY");
+      if (newStartDate.isValid()) {
+        updateDates(newStartDate); // Aktualizacja dat po ustawieniu nowej daty
+      } else {
+        vscode.window.showErrorMessage("Invalid date format provided.");
+      }
+    }
+  });
+
+  function updateDates(startDate?: moment.Moment) {
+    startDate = startDate || moment().startOf("isoWeek").add(1, "week");
+    let nextValidMonday = startDate.clone(); // Inicjalizacja kolejnego poniedziałku
 
     myTreeDataProvider.items.forEach((item) => {
       if (item.checked) {
         item.nextMonday = nextValidMonday.clone();
         item.updateNextMonday();
-        nextValidMonday.add(1, "week"); // Move to the next Monday for the next item
+        nextValidMonday.add(1, "week"); // Przejście do następnego poniedziałku dla kolejnego elementu
       } else {
         item.nextMonday = null;
         item.updateNextMonday();
       }
     });
+
+    myTreeDataProvider.refresh();
   }
 }
 
@@ -99,7 +123,7 @@ class TreeItem extends vscode.TreeItem {
 
   updateNextMonday() {
     if (this.checked && this.nextMonday === null) {
-      let startDate = moment().startOf("isoWeek").add(1, "week"); // Start from next Monday
+      let startDate = moment().startOf("isoWeek").add(1, "week"); // Start od następnego poniedziałku
       this.nextMonday = startDate.clone().add(this.index, "week");
     } else if (!this.checked) {
       this.nextMonday = null;
@@ -157,6 +181,10 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
   toggleItemChecked(item: TreeItem) {
     item.toggleChecked();
+    this._onDidChangeTreeData.fire();
+  }
+
+  refresh() {
     this._onDidChangeTreeData.fire();
   }
 }
