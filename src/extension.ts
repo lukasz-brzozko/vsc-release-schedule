@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import moment from "moment";
 
+type TSettings = {
+  name: string;
+  enabled: boolean;
+};
+
 let userStartDate: moment.Moment | null = null; // Track the user-selected date
 
 export function activate(context: vscode.ExtensionContext) {
@@ -108,6 +113,12 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
+  // Funkcja do zapisywania stanu
+  function saveStateToSettings(state: TSettings[]) {
+    const config = vscode.workspace.getConfiguration("releaseSchedule");
+    config.update("items", state, vscode.ConfigurationTarget.Global);
+  }
+
   function updateDates(startDate?: moment.Moment | null) {
     if (!startDate) {
       startDate = moment().startOf("isoWeek").add(1, "week"); // Default to next Monday
@@ -126,6 +137,12 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     myTreeDataProvider.refresh();
+
+    saveStateToSettings(
+      myTreeDataProvider.items.map((item) => {
+        return { name: item.originalLabel, enabled: item.checked };
+      })
+    );
   }
 }
 
@@ -182,12 +199,33 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     TreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  public items: TreeItem[] = [
-    new TreeItem("Item 1", vscode.TreeItemCollapsibleState.None, 0),
-    new TreeItem("Item 2", vscode.TreeItemCollapsibleState.None, 1),
-    new TreeItem("Item 3", vscode.TreeItemCollapsibleState.None, 2),
-    new TreeItem("Item 4", vscode.TreeItemCollapsibleState.None, 3),
-  ];
+  public items: TreeItem[] = this.loadStateFromSettings().map(
+    ({ name, enabled }, index) =>
+      new TreeItem(name, vscode.TreeItemCollapsibleState.None, index, enabled)
+  );
+
+  loadStateFromSettings(): TSettings[] {
+    const defaultValues = [
+      {
+        name: "Item 1",
+        enabled: true,
+      },
+      {
+        name: "Item 2",
+        enabled: true,
+      },
+      {
+        name: "Item 3",
+        enabled: true,
+      },
+      {
+        name: "Item 4",
+        enabled: true,
+      },
+    ];
+    const config = vscode.workspace.getConfiguration("releaseSchedule");
+    return config.get("items") ?? defaultValues;
+  }
 
   getTreeItem(element: TreeItem): vscode.TreeItem {
     return element;

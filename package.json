@@ -12,6 +12,31 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Release Schedule",
+      "properties": {
+        "releaseSchedule.items": {
+          "items": [
+            {
+              "name": "Item 1",
+              "enabled": true
+            },
+            {
+              "name": "Item 2",
+              "enabled": true
+            },
+            {
+              "name": "Item 3",
+              "enabled": true
+            },
+            {
+              "name": "Item 4",
+              "enabled": true
+            }
+          ]
+        }
+      }
+    },
     "commands": [
       {
         "command": "extension.showTreeView",
