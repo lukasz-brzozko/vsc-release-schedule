@@ -4,6 +4,8 @@
   "description": "Organises release schedule order and generates Slack reminder messages in VSC Panel",
   "author": "Łukasz Brzózko",
   "version": "0.1.0",
+  "repository": "https://github.com/lukasz-brzozko/vsc-release-schedule",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.91.0"
   },
