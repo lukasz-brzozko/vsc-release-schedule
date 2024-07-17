@@ -5,6 +5,8 @@ export function activate(context: vscode.ExtensionContext) {
   const myTreeDataProvider = new MyTreeDataProvider();
   vscode.window.registerTreeDataProvider("myTreeView", myTreeDataProvider);
 
+  let startDate: moment.Moment | null = null;
+
   let disposable = vscode.commands.registerCommand(
     "extension.showTreeView",
     () => {
@@ -20,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     const index = myTreeDataProvider.items.indexOf(item);
     if (index > 0) {
       myTreeDataProvider.moveItem(index, index - 1);
-      updateDates();
+      updateDates(startDate);
     }
   });
 
@@ -28,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
     const index = myTreeDataProvider.items.indexOf(item);
     if (index < myTreeDataProvider.items.length - 1) {
       myTreeDataProvider.moveItem(index, index + 1);
-      updateDates();
+      updateDates(startDate);
     }
   });
 
@@ -36,7 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
     "myTreeView.toggleChecked",
     (item: TreeItem) => {
       myTreeDataProvider.toggleItemChecked(item);
-      updateDates();
+      updateDates(startDate);
     }
   );
 
@@ -75,14 +77,15 @@ export function activate(context: vscode.ExtensionContext) {
     if (dateStr) {
       const newStartDate = moment(dateStr, "DD.MM.YYYY");
       if (newStartDate.isValid()) {
-        updateDates(newStartDate); // Aktualizacja dat po ustawieniu nowej daty
+        startDate = newStartDate; // Ustawienie nowej daty startowej
+        updateDates(startDate); // Aktualizacja dat po ustawieniu nowej daty
       } else {
         vscode.window.showErrorMessage("Invalid date format provided.");
       }
     }
   });
 
-  function updateDates(startDate?: moment.Moment) {
+  function updateDates(startDate?: moment.Moment | null) {
     startDate = startDate || moment().startOf("isoWeek").add(1, "week");
     let nextValidMonday = startDate.clone(); // Inicjalizacja kolejnego poniedziałku
 
